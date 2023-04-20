@@ -10,18 +10,6 @@ async def db_start():
     db = sq.connect(f'{database_name}')
     cursor = db.cursor()
 
-    cursor.execute('CREATE TABLE IF NOT EXIST orders('
-                   '"order_number DECIMAL PRIMARY KEY'
-                   'user_id DECIMAL'
-                   'phone DECIMAL'
-                   'address TEXT'
-                   'cell_size TEXT'
-                   'weight TEXT'
-                   'is_processed TEXT'
-                   'cell_number DECIMAL'
-                   'storage_time DATETIME'
-                   'expiration_time DATETIME")'
-                   )
     db.commit()
 
 
