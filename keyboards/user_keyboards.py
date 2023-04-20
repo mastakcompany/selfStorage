@@ -6,16 +6,12 @@ def start_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text='Button #1'),
-                KeyboardButton(text='Button #2'),
-                KeyboardButton(text='Button #3'),
+                KeyboardButton(text='Отправить на хранение 🚚'),
+                KeyboardButton(text='Мои ячейки 🗄️'),
             ],
             [
-                KeyboardButton(text='Button #4'),
-                KeyboardButton(text='Button #5'),
-            ],
-            [
-                KeyboardButton(text='Button #6'),
+                KeyboardButton(text='Что можно хранить на складе ❓'),
+                KeyboardButton(text='Условия хранения 📝'),
             ]
         ],
         resize_keyboard=True
