@@ -4,7 +4,7 @@ from aiogram import filters
 from aiogram.types import Message
 
 from keyboards.user_keyboards import start_keyboard, \
-    storage_conditions_keyboard
+    storage_conditions_keyboard, what_can_be_stored_keyboard
 from lexicon.lexicon_ru import LEXICON_RU
 
 router: Router = Router()
@@ -33,3 +33,13 @@ async def process_storage_conditions_cmd(message: Message):
         text='Ознакомиться с условиями хранения:',
         reply_markup=storage_conditions_keyboard()
     )
+
+
+@router.message(Text(contains=['Что можно хранить']))
+async def process_storage_conditions_cmd(message: Message):
+    await message.answer(
+        text='Ознакомиться с правилами хранения:',
+        reply_markup=what_can_be_stored_keyboard()
+    )
+
+
