@@ -169,13 +169,13 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
             text='Выберите ячейку, из которой хотите забрать вещи:',
             reply_markup=generate_pick_up_cells_keyboard(user_cells)
         )
-         if callback.data == 'deliver_home':
+        if callback.data == 'deliver_home':
             users_features[user_id]['deliver'] = True  # доставить вещи клиенту на дом
         else:
             users_features[user_id]['deliver'] = False  # клиент заберет вещи сам
 
 
- @router.callback_query(Text(startswith=['pick_up_cell_']))
+@router.callback_query(Text(startswith=['pick_up_cell_']))
 async def output_pick_up_cells_buttons(callback: CallbackQuery):
     user_id = callback.from_user.id
     if user_id in users_features:
