@@ -154,9 +154,10 @@ async def output_pick_up_things_buttons(callback: CallbackQuery):
             text='Заберете вещи сами?',
             reply_markup=generate_pick_up_things_keyboard()
         )
-        if callback.message.text == 'pick_up_some_things':
+        if callback.data == 'pick_up_some_things':
             users_features[user_id]['all_things'] = False  # клиент заберет часть вещей
-        users_features[user_id]['all_things'] = True  # клиент заберет все вещи
+        else:
+            users_features[user_id]['all_things'] = True  # клиент заберет все вещи
 
 
 @router.callback_query(Text(text=['pick_up_myself', 'deliver_home']))
@@ -168,9 +169,10 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
             text='Выберите ячейку, из которой хотите забрать вещи:',
             reply_markup=generate_pick_up_cells_keyboard(user_cells)
         )
-        if callback.message.text == 'pick_up_myself':
+        if callback.data == 'deliver_home':
+            users_features[user_id]['deliver'] = True  # доставить вещи клиенту на дом
+        else:
             users_features[user_id]['deliver'] = False  # клиент заберет вещи сам
-        users_features[user_id]['deliver'] = True  # доставить вещи клиенту на дом
 
 
 @router.callback_query(Text(startswith=['pick_up_cell_']))
@@ -181,12 +183,15 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
             await callback.message.edit_text(
                 text='Менеджер свяжется с вами в ближайшее время для уточнения деталей доставки ваших вещей.'
             )
-        if users_features[user_id]['all_things']:
-            await callback.message.edit_text(
-                text='''Прислать клиенту QR-код с номером (номерами) ячейки и адресом склада.
+        else:
+            if users_features[user_id]['all_things']:
+                await callback.message.edit_text(
+                    text='''Прислать клиенту QR-код с номером (номерами) ячейки и адресом склада.
             QR-код можно генерировать с помощью API bitly'''
-            )
-        await callback.message.edit_text(
-            text='''Прислать клиенту QR-код с номером (номерами) ячейки и адресом склада.
-        QR-код можно генерировать с помощью API bitly + оповещение, что вещи можно будет вернуть'''
-        )
+                )
+            else:
+                await callback.message.edit_text(
+                    text='''Прислать клиенту QR-код с номером (номерами) ячейки и адресом склада.
+            QR-код можно генерировать с помощью API bitly + оповещение, что вещи можно будет вернуть'''
+                )
+    del users_features[user_id]
