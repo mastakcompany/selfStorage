@@ -1,3 +1,3 @@
-aiogram==2.25.1
+aiogram==3.0.0b6
 environs==9.5.0
 python-dotenv==0.21.1
