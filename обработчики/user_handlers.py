@@ -162,7 +162,6 @@ async def output_pick_up_things_buttons(callback: CallbackQuery):
 @router.callback_query(Text(text=['pick_up_myself', 'deliver_home']))
 async def output_pick_up_cells_buttons(callback: CallbackQuery):
     user_id = callback.from_user.id
-    print(users_features)
     if user_id in users_features:
         user_cells = users_features[user_id]['cell_number']
         await callback.message.edit_text(
@@ -177,7 +176,6 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
 @router.callback_query(Text(startswith=['pick_up_cell_']))
 async def output_pick_up_cells_buttons(callback: CallbackQuery):
     user_id = callback.from_user.id
-    print(users_features)
     if user_id in users_features:
         if users_features[user_id]['deliver']:
             await callback.message.edit_text(
