@@ -9,7 +9,7 @@ from keyboards.user_keyboards import start_keyboard, \
     send_to_storage_keyboard, item_weight_keyboard, item_dimensions_keyboard, \
     rental_period_keyboard, output_my_cells_keyboard, generate_my_cells_keyboard, \
     extend_rental_period_keyboard, generate_pick_up_things_keyboard, \
-    generate_pick_up_cells_keyboard
+    generate_pick_up_cells_keyboard, rental_period_keyboard
 from lexicon.lexicon_ru import LEXICON_RU
 
 router: Router = Router()
