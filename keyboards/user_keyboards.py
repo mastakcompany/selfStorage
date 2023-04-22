@@ -1,6 +1,9 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, \
-    InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
 
 
 def start_keyboard():
@@ -65,64 +68,32 @@ def send_to_storage_keyboard():
 
 
 def item_weight_keyboard():
+    weights = [('До 10 кг', '10'), ('От 10 до 25 кг', '25'), ('От 25 до 40 кг', '40'),
+               ('От 40 до 70 кг', '70'), ('От 70 до 100 кг', '100'), ('Свыше 100 кг', 'over')]
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(
-                text='До 10 кг',
-                callback_data='10')],
-            [InlineKeyboardButton(
-                text='От 10 до 25 кг',
-                callback_data='25')],
-            [InlineKeyboardButton(
-                text='От 25 до 40 кг',
-                callback_data='40')],
-            [InlineKeyboardButton(
-                text='От 40 до 70 кг',
-                callback_data='70')],
-            [InlineKeyboardButton(
-                text='От 70 до 100 кг',
-                callback_data='100')],
-            [InlineKeyboardButton(
-                text='Свыше 100 кг',
-                callback_data='over')],
-        ]
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in weights
+        ],
     )
 
 
 def item_dimensions_keyboard():
+    dimensions = [('Не хочу! Я плачу бабки, измеряйте сами.', 'empty_dimension'),
+                  ('Менее 3 кв.м (1800 руб/мес)', 'dimension_3'),
+                  ('От 3 до 7 кв.м (2000 руб/мес)', 'dimension_7'),
+                  ('От 7 до 10 кв.м (2200 руб/мес)', 'dimension_10')]
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(
-                text='Не хочу! Я плачу бабки, измеряйте сами.',
-                callback_data='empty_dimension')],
-            [InlineKeyboardButton(
-                text='Менее 3 кв.м (1800 руб/мес)',
-                callback_data='dimension_3')],
-            [InlineKeyboardButton(
-                text='От 3 до 7 кв.м (2000 руб/мес)',
-                callback_data='dimension_7')],
-            [InlineKeyboardButton(
-                text='От 7 до 10 кв.м (2200 руб/мес)',
-                callback_data='dimension_10')]
-        ]
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in dimensions
+        ],
     )
 
 
 def rental_period_keyboard():
+    periods = [('1 месяц', 'one_month'), ('3 месяца', 'tree_month'),
+               ('6 месяцев', 'six_month'), ('12 месяцев', 'twelve_month')]
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(
-                text='1 месяц',
-                callback_data='one_month')],
-            [InlineKeyboardButton(
-                text='3 месяца',
-                callback_data='tree_month')],
-            [InlineKeyboardButton(
-                text='6 месяцев',
-                callback_data='six_month')],
-            [InlineKeyboardButton(
-                text='12 месяцев',
-                callback_data='twelve_month')],
-
-        ]
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in periods
+        ],
     )
