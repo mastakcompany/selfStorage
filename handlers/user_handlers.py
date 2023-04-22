@@ -3,11 +3,12 @@ from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
 
 from config_data.config import my_table
-from database.utils import database_entry_user_id, database_entry_by_user
+# from database.utils import database_entry_user_id, database_entry_by_user
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 
 router = Router()
+
 
 users_features = {}
 '''Переменная для хранения данных пользователя для последующей их записи в БД.
@@ -67,22 +68,32 @@ async def process_send_to_storage(message: Message):
         text=LEXICON_RU['rules'],
         reply_markup=user_keyboards.send_to_storage_keyboard()
     )
-    telegram_id = int(message.from_user.id)
+    user_id = int(message.from_user.id)
+    users_features[user_id] = {}
 
 
 @router.callback_query(Text(text=['yourself', 'courier']))
 async def get_item_weight(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    if user_id in users_features:
+        if callback.data == 'courier':
+            users_features[user_id]['deliver'] = True
+        else:
+            users_features[user_id]['deliver'] = False
+
     await callback.message.edit_text(
         text='Каков примерный вес ваших вещей?',
         reply_markup=user_keyboards.item_weight_keyboard()
     )
     await callback.answer()
-    telegram_id = callback.message.from_user.id
-    print(callback.data)
 
 
 @router.callback_query(Text(text=['10', '25', '40', '70', '100', 'over']))
 async def get_item_dimensions(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    if user_id in users_features:
+        users_features[user_id]['weight'] = callback.data
+
     await callback.message.edit_text(
         text=LEXICON_RU['dimension'],
         reply_markup=user_keyboards.item_dimensions_keyboard()
@@ -92,18 +103,55 @@ async def get_item_dimensions(callback: CallbackQuery):
 
 @router.callback_query(Text(text=['empty_dimension', 'dimension_3', 'dimension_7', 'dimension_10']))
 async def get_rental_period(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    if user_id in users_features:
+        if callback.data == 'empty_dimension':
+            users_features[user_id]['cell_size'] = ''
+        else:
+            users_features[user_id]['cell_size'] = callback.data
+
     await callback.message.edit_text(
         text='Выберите срок аренды:',
         reply_markup=user_keyboards.rental_period_keyboard()
     )
 
 
-@router.callback_query(Text(text=['one_month', 'tree_month', 'six_month', 'twelve_month', ]))
+@router.callback_query(Text(text=['one_month', 'tree_month', 'six_month', 'twelve_month']))
 async def get_phone_number(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    if user_id in users_features:
+        users_features[user_id]['storage_time'] = callback.data
+
     await callback.message.edit_text(
-        text='Введите ваш номер телефона для связи:',
+        text='Введите ваш номер телефона для связи:'
     )
-    await callback.answer()
+
+
+@router.message(Text)
+async def check_enter_message(message: Message):
+    user_id = message.from_user.id
+    if user_id in users_features:
+        if 'phone' in users_features[user_id]:
+            users_features[user_id]['address'] = message.text
+            await check_deliver_method(user_id, message)
+        else:
+            users_features[user_id]['phone'] = message.text
+            await message.answer(
+                text='Введите адрес, откуда забрать вещи:'
+            )
+
+
+async def check_deliver_method(user_id, message):
+    # ЗДЕСЬ ВЫЗВАТЬ ФУНКЦИЮ ДЛЯ ЗАПИСИ В БД
+    # ПОСЛЕ ЗАПИСИ ДАННЫХ УДАЛИТЬ user_id ИЗ users_features
+    if users_features[user_id]['deliver']:  # если вещи нужно забрать курьером
+        await message.answer(
+            text='Наш менеджер свяжется с вами в ближайшее время для уточнения деталей оплаты  и времени доставки.'
+        )
+    else:
+        await message.answer(
+            text='Место для ваших вещей забронировано на складе. Ждем вас (дата, которую ввел пользователь)'
+        )
 
 
 # Ветвь "Мои ячейки"
