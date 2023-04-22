@@ -2,6 +2,8 @@ from aiogram import Router
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
 
+from config_data.config import my_table
+from database.utils import database_entry_user_id, database_entry_by_user
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 
@@ -14,6 +16,7 @@ users_features = {}
 users_features = {
     'user_id': {
         'phone': user_phone,
+        'yourself': Bool,
         'address': user_address, если пустое, то клиент сам привезет свои вещи,
         'cell_size': значение габаритов ячейки, если клиент не хочет сам мерять, то False,
         'weight': масса вещей,
@@ -64,6 +67,7 @@ async def process_send_to_storage(message: Message):
         text=LEXICON_RU['rules'],
         reply_markup=user_keyboards.send_to_storage_keyboard()
     )
+    telegram_id = int(message.from_user.id)
 
 
 @router.callback_query(Text(text=['yourself', 'courier']))
@@ -73,6 +77,8 @@ async def get_item_weight(callback: CallbackQuery):
         reply_markup=user_keyboards.item_weight_keyboard()
     )
     await callback.answer()
+    telegram_id = callback.message.from_user.id
+    print(callback.data)
 
 
 @router.callback_query(Text(text=['10', '25', '40', '70', '100', 'over']))
