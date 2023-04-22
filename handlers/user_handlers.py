@@ -2,16 +2,7 @@ from aiogram import Router
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
 
-<<<<<<< HEAD
 from keyboards import user_keyboards
-=======
-from keyboards.user_keyboards import start_keyboard, \
-    storage_conditions_keyboard, what_can_be_stored_keyboard, \
-    send_to_storage_keyboard, item_weight_keyboard, item_dimensions_keyboard, \
-    rental_period_keyboard, output_my_cells_keyboard, generate_my_cells_keyboard, \
-    extend_rental_period_keyboard, generate_pick_up_things_keyboard, \
-    generate_pick_up_cells_keyboard, rental_period_keyboard
->>>>>>> e951af1c9a2211d467ccebf5e5df8b4236d6f3d6
 from lexicon.lexicon_ru import LEXICON_RU
 
 router = Router()
@@ -118,7 +109,7 @@ async def output_my_cells_menu(message: Message):
     users_features[user_id]['cell_number'] = cell_number
     await message.answer(
         text=f'{cell_number}',
-        reply_markup=output_my_cells_keyboard()
+        reply_markup=user_keyboards.output_my_cells_keyboard()
     )
 
 
@@ -128,7 +119,7 @@ async def get_cell_number(callback: CallbackQuery):
     user_cells = users_features[user_id]['cell_number']
     await callback.message.edit_text(
         text='Выберите ячейку, для которой хотите продлить срок хранения:',
-        reply_markup=generate_my_cells_keyboard(user_cells)
+        reply_markup=user_keyboards.generate_my_cells_keyboard(user_cells)
     )
 
 
@@ -136,7 +127,7 @@ async def get_cell_number(callback: CallbackQuery):
 async def extend_rental_period_cmd(callback: CallbackQuery):
     await callback.message.edit_text(
         text='Выберите срок продления аренды:',
-        reply_markup=extend_rental_period_keyboard()
+        reply_markup=user_keyboards.extend_rental_period_keyboard()
     )
 
 
@@ -154,7 +145,7 @@ async def output_pick_up_things_buttons(callback: CallbackQuery):
     if user_id in users_features:
         await callback.message.edit_text(
             text='Заберете вещи сами?',
-            reply_markup=generate_pick_up_things_keyboard()
+            reply_markup=user_keyboards.generate_pick_up_things_keyboard()
         )
         if callback.data == 'pick_up_some_things':
             users_features[user_id]['all_things'] = False  # клиент заберет часть вещей
@@ -169,7 +160,7 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
         user_cells = users_features[user_id]['cell_number']
         await callback.message.edit_text(
             text='Выберите ячейку, из которой хотите забрать вещи:',
-            reply_markup=generate_pick_up_cells_keyboard(user_cells)
+            reply_markup=user_keyboards.generate_pick_up_cells_keyboard(user_cells)
         )
         if callback.data == 'deliver_home':
             users_features[user_id]['deliver'] = True  # доставить вещи клиенту на дом
