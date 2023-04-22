@@ -1,3 +1,4 @@
 aiogram==3.0.0b6
 environs==9.5.0
 python-dotenv==0.21.1
+sqlite3-api==2.0.4
