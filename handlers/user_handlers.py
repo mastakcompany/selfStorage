@@ -7,6 +7,9 @@ from config_data.config import my_table
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 
+from aiogram3_calendar import DialogCalendar, dialog_cal_callback
+
+
 router = Router()
 
 
@@ -135,13 +138,26 @@ async def check_enter_message(message: Message):
             users_features[user_id]['address'] = message.text
             await check_deliver_method(user_id, message)
         else:
-            users_features[user_id]['phone'] = message.text
-            await message.answer(
-                text='Введите адрес, откуда забрать вещи:'
-            )
+            if users_features[user_id]['deliver']:
+                users_features[user_id]['phone'] = message.text
+                await message.answer(text='Введите адрес, откуда забрать вещи:')
+            else:
+                await message.answer(
+                    text='Адрес склада такой-то.\n\nУкажите день, когда приедете:',
+                    reply_markup=await DialogCalendar.start_calendar()
+                )
 
 
-async def check_deliver_method(user_id, message):
+@router.callback_query(dialog_cal_callback.filter())
+async def process_dialog_calendar(callback: CallbackQuery, callback_data: dict):
+    selected, date = await DialogCalendar().process_selection(callback, callback_data)
+    if selected:
+        message = date.strftime("%d/%m/%Y")
+        user_id = callback.from_user.id
+        await check_deliver_method(user_id, message, callback)
+
+
+async def check_deliver_method(user_id, message, *args):
     # ЗДЕСЬ ВЫЗВАТЬ ФУНКЦИЮ ДЛЯ ЗАПИСИ В БД
     # ПОСЛЕ ЗАПИСИ ДАННЫХ УДАЛИТЬ user_id ИЗ users_features
     if users_features[user_id]['deliver']:  # если вещи нужно забрать курьером
@@ -149,8 +165,8 @@ async def check_deliver_method(user_id, message):
             text='Наш менеджер свяжется с вами в ближайшее время для уточнения деталей оплаты  и времени доставки.'
         )
     else:
-        await message.answer(
-            text='Место для ваших вещей забронировано на складе. Ждем вас (дата, которую ввел пользователь)'
+        await args[0].message.edit_text(
+            text=f'Место для ваших вещей забронировано на складе. Ждем вас {message}'
         )
 
 
