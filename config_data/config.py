@@ -33,6 +33,7 @@ def load_config() -> Config:
         db=DatabaseConfig(database=env('DATABASE_NAME'))
     )
 
+
 # Заполнение таблицы полями. Поле id (создается автоматически, поэтому здесь не указано), является PRIMARY KEY
 # Будем считать, что это номер заказа
 class Users(Table):
@@ -46,5 +47,4 @@ class Users(Table):
     expiration_time: str  # Время истечения срока хранения.
 
 
-my_table = Users(db_path='./database.db')
-my_table.create_table()
+my_table = Users(db_path=f'{load_config().db.database}')

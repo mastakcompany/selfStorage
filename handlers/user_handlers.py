@@ -3,15 +3,12 @@ from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
 
 from config_data.config import my_table
-# from database.utils import database_entry_user_id, database_entry_by_user
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 
 from aiogram3_calendar import DialogCalendar, dialog_cal_callback
 
-
 router = Router()
-
 
 users_features = {}
 '''Переменная для хранения данных пользователя для последующей их записи в БД.
