@@ -7,30 +7,27 @@ from aiogram.types import (
 
 
 def start_keyboard():
+    buttons_data = [
+        ('Отправить на хранение 🚚', 'Мои ячейки 🗄️'),
+        ('Что можно хранить ❓', 'Условия хранения 📝')
+    ]
+
     return ReplyKeyboardMarkup(
         keyboard=[
-            [
-                KeyboardButton(text='Отправить на хранение 🚚'),
-                KeyboardButton(text='Мои ячейки 🗄️'),
-            ],
-            [
-                KeyboardButton(text='Что можно хранить ❓'),
-                KeyboardButton(text='Условия хранения 📝', ),
-            ]
+            [KeyboardButton(text=text) for text in row] for row in buttons_data
         ],
         resize_keyboard=True
     )
 
 
 def storage_conditions_keyboard():
+    buttons_data = [
+        ('Читать 🔍', 'https://telegra.ph/Usloviya-hraneniya-04-20')
+    ]
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text='Читать 🔍',
-                    url='https://telegra.ph/Usloviya-hraneniya-04-20'
-                )
-            ]
+            [InlineKeyboardButton(text=text, url=url)] for text, url in buttons_data
         ]
     )
 
@@ -49,27 +46,21 @@ def what_can_be_stored_keyboard():
 
 
 def send_to_storage_keyboard():
+    buttons_data = [
+        ('Привезете вещи сами?', 'yourself'),
+        ('Курьером (бесплатно)', 'courier')
+    ]
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text='Привезете вещи сами?',
-                    callback_data='yourself'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text='Курьером (бесплатно)',
-                    callback_data='courier'
-                )
-            ]
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in buttons_data
         ]
     )
 
 
 def item_weight_keyboard():
-    weights = [('До 10 кг', '10'), ('От 10 до 25 кг', '25'), ('От 25 до 40 кг', '40'),
-               ('От 40 до 70 кг', '70'), ('От 70 до 100 кг', '100'), ('Свыше 100 кг', 'over')]
+    weights = [('До 10 кг', 'weight under10'), ('От 10 до 25 кг', 'weight 10-25'), ('От 25 до 40 кг', 'weight 25-40'),
+               ('От 40 до 70 кг', 'weight 40-70'), ('От 70 до 100 кг', 'weight 70-100'), ('Свыше 100 кг', 'weight over100')]
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=text, callback_data=data)] for text, data in weights
@@ -78,10 +69,10 @@ def item_weight_keyboard():
 
 
 def item_dimensions_keyboard():
-    dimensions = [('Не хочу! Я плачу бабки, измеряйте сами.', 'empty_dimension'),
-                  ('Менее 3 кв.м (1800 руб/мес)', 'dimension_3'),
-                  ('От 3 до 7 кв.м (2000 руб/мес)', 'dimension_7'),
-                  ('От 7 до 10 кв.м (2200 руб/мес)', 'dimension_10')]
+    dimensions = [('Не хочу! Я плачу бабки, измеряйте сами.', 'dimension empty'),
+                  ('Менее 3 кв.м (1800 руб/мес)', 'dimension under3'),
+                  ('От 3 до 7 кв.м (2000 руб/мес)', 'dimension 3-7'),
+                  ('От 7 до 10 кв.м (2200 руб/мес)', 'dimension 7-10')]
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=text, callback_data=data)] for text, data in dimensions
@@ -90,8 +81,8 @@ def item_dimensions_keyboard():
 
 
 def rental_period_keyboard():
-    periods = [('1 месяц', 'one_month'), ('3 месяца', 'tree_month'),
-               ('6 месяцев', 'six_month'), ('12 месяцев', 'twelve_month')]
+    periods = [('1 месяц', '1 month'), ('3 месяца', '3 month'),
+               ('6 месяцев', '6 month'), ('12 месяцев', '12 month')]
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=text, callback_data=data)] for text, data in periods
@@ -100,26 +91,15 @@ def rental_period_keyboard():
 
 
 def output_my_cells_keyboard():
+    buttons_data = [
+        ('Продлить хранение', 'extend_storage'),
+        ('Забрать часть вещей', 'pick_up_some_things'),
+        ('Забрать вещи', 'pick_up_all_things')
+    ]
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text='Продлить хранение',
-                    callback_data='extend_storage'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text='Забрать часть вещей',
-                    callback_data='pick_up_some_things'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text='Забрать вещи',
-                    callback_data='pick_up_all_things'
-                )
-            ]
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in buttons_data
         ]
     )
 
@@ -138,52 +118,50 @@ def generate_my_cells_keyboard(user_cells):
 
 
 def extend_rental_period_keyboard():
+    periods = [
+        ('1 месяц', 'extend_one_month'),
+        ('3 месяца', 'extend_tree_month'),
+        ('6 месяцев', 'extend_six_month'),
+        ('12 месяцев', 'extend_twelve_month')
+    ]
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(
-                text='1 месяц',
-                callback_data='extend_one_month')],
-            [InlineKeyboardButton(
-                text='3 месяца',
-                callback_data='extend_tree_month')],
-            [InlineKeyboardButton(
-                text='6 месяцев',
-                callback_data='extend_six_month')],
-            [InlineKeyboardButton(
-                text='12 месяцев',
-                callback_data='extend_twelve_month')],
-
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in periods
         ]
     )
 
 
 def generate_pick_up_things_keyboard():
+    buttons_data = [
+        ('Заберу сам(а)', 'pick_up_myself'),
+        ('Доставить на дом', 'deliver_home')
+    ]
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text='Заберу сам(а)',
-                    callback_data='pick_up_myself'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text='Доставить на дом',
-                    callback_data='deliver_home'
-                )
-            ]
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in buttons_data
         ]
     )
 
 
 def generate_pick_up_cells_keyboard(user_cells):
-    inline_keyboard = []
-    for cell in user_cells:
-        cell_button = [
-            InlineKeyboardButton(
-                text=f'{cell}',
-                callback_data=f'pick_up_cell_{cell}'
-            )
-        ]
-        inline_keyboard.append(cell_button)
+    inline_keyboard = [
+        [InlineKeyboardButton(text=f'{cell}', callback_data=f'pick_up_cell_{cell}')]
+        for cell in user_cells
+    ]
+
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def agree_keyboard():
+    buttons_data = [
+        ('Согласен с правилами', 'agree')
+    ]
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in buttons_data
+        ]
+    )
+

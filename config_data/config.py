@@ -49,5 +49,5 @@ class Users(Table):
     expiration_time: str  # Время истечения срока хранения.
 
 
-my_table = Users(db_path=Path(Path.cwd().parent, 'database',
-                              load_config().db.database))
+my_table = Users(db_path=load_config().db.database)
+

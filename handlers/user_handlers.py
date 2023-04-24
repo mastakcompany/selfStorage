@@ -2,10 +2,8 @@ from aiogram import Router
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
 
-from config_data.config import my_table
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
-
 from aiogram3_calendar import DialogCalendar, dialog_cal_callback
 
 router = Router()
@@ -15,16 +13,15 @@ users_features = {}
 После отправки данных в БД удалить все записи для текущего user_id.
 Словарь может иметь следующие значения:
 users_features = {
-    'user_id': {
+        'user_id': 'telegram_id',
+        'weight': масса вещей,
+        'cell_size': значение габаритов ячейки, если клиент не хочет сам мерять то False,
+        'storage_time': срок аренды ячейки,
         'phone': user_phone,
         'yourself': Bool,
         'address': user_address, если пустое, то клиент сам привезет свои вещи,
-        'cell_size': значение габаритов ячейки, если клиент не хочет сам мерять, то False,
-        'weight': масса вещей,
         'is_processed': обработан ли заказ (True) или это новый (False),
         'cell_number': номера ячеек хранения,
-        'storage_time': срок аренды ячейки
-    }
 }
 '''
 
@@ -66,33 +63,42 @@ async def process_what_can_be_stored(message: Message):
 async def process_send_to_storage(message: Message):
     await message.answer(
         text=LEXICON_RU['rules'],
-        reply_markup=user_keyboards.send_to_storage_keyboard()
+        reply_markup=user_keyboards.agree_keyboard()
     )
     user_id = int(message.from_user.id)
-    users_features[user_id] = {}
+    users_features[user_id] = user_id
 
 
-@router.callback_query(Text(text=['yourself', 'courier']))
+@router.callback_query(Text(text=['agree']))
 async def get_item_weight(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    if user_id in users_features:
-        if callback.data == 'courier':
-            users_features[user_id]['deliver'] = True
-        else:
-            users_features[user_id]['deliver'] = False
-
     await callback.message.edit_text(
         text='Каков примерный вес ваших вещей?',
         reply_markup=user_keyboards.item_weight_keyboard()
     )
+    users_features['weight'] = callback.data
     await callback.answer()
 
 
-@router.callback_query(Text(text=['10', '25', '40', '70', '100', 'over']))
+# @router.callback_query(Text(text=['yourself', 'courier']))
+# async def get_item_weight(callback: CallbackQuery):
+#     user_id = callback.from_user.id
+#     if user_id in users_features:
+#         if callback.data == 'courier':
+#             users_features[user_id]['deliver'] = True
+#         else:
+#             users_features[user_id]['deliver'] = False
+#
+#     await callback.message.edit_text(
+#         text='Каков примерный вес ваших вещей?',
+#         reply_markup=user_keyboards.item_weight_keyboard()
+#     )
+#     await callback.answer()
+
+
+@router.callback_query(Text(startswith=['weight']))
 async def get_item_dimensions(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    if user_id in users_features:
-        users_features[user_id]['weight'] = callback.data
+    weight = callback.data.split()[1]
+    users_features['weight'] = weight
 
     await callback.message.edit_text(
         text=LEXICON_RU['dimension'],
@@ -101,30 +107,26 @@ async def get_item_dimensions(callback: CallbackQuery):
     await callback.answer()
 
 
-@router.callback_query(Text(text=['empty_dimension', 'dimension_3', 'dimension_7', 'dimension_10']))
+@router.callback_query(Text(startswith=['dimension']))
 async def get_rental_period(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    if user_id in users_features:
-        if callback.data == 'empty_dimension':
-            users_features[user_id]['cell_size'] = ''
-        else:
-            users_features[user_id]['cell_size'] = callback.data
+    dimension = callback.data.split()[1]
+    users_features['dimension'] = dimension
 
     await callback.message.edit_text(
         text='Выберите срок аренды:',
         reply_markup=user_keyboards.rental_period_keyboard()
     )
+    await callback.answer()
 
 
-@router.callback_query(Text(text=['one_month', 'tree_month', 'six_month', 'twelve_month']))
+@router.callback_query(Text(endswith=['month']))
 async def get_phone_number(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    if user_id in users_features:
-        users_features[user_id]['storage_time'] = callback.data
+    users_features['storage_time'] = callback.data.split()[0]
 
     await callback.message.edit_text(
         text='Введите ваш номер телефона для связи:'
     )
+    await callback.answer()
 
 
 @router.message(Text)
