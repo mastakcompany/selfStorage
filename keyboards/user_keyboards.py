@@ -164,4 +164,3 @@ def agree_keyboard():
             [InlineKeyboardButton(text=text, callback_data=data)] for text, data in buttons_data
         ]
     )
-

@@ -1,7 +1,18 @@
 from dataclasses import dataclass
 from environs import Env
 from sqlite3_api.Table import Table
+from sqlite3_api.field_types import List
 from pathlib import Path
+
+
+@dataclass
+class BitlyToken:
+    b_token: str
+
+
+@dataclass
+class AdminIds:
+    ids_list: list  # список телеграм id админов
 
 
 @dataclass
@@ -22,6 +33,8 @@ class TgBot:
 class Config:
     tg_bot: TgBot
     db: DatabaseConfig
+    admin_ids: AdminIds
+    bitly_token: BitlyToken
 
 
 def load_config() -> Config:
@@ -30,7 +43,9 @@ def load_config() -> Config:
 
     return Config(
         tg_bot=TgBot(token=env('BOT_TOKEN')),
-        db=DatabaseConfig(database=env('DATABASE_NAME'))
+        db=DatabaseConfig(database=env('DATABASE_NAME')),
+        admin_ids=AdminIds(ids_list=env('ADMIN_IDS')),
+        bitly_token=BitlyToken(b_token=env('BITLY_TOKEN'))
     )
 
 
@@ -41,13 +56,20 @@ class Users(Table):
     phone: str
     address: str  # Адрес клиента. Если пустое, то клиент
     # привезет свои вещи сам.
-    cell_size: str  # Значение габаритов ячейки. Если пустое,
+    dimension: str  # Значение габаритов ячейки. Если пустое,
     # то клиент не хочет сам мерять.
     weight: str  # Масса вещей.
-    cell_number: list  # Список с номерами ячеек хранения для данного клиента.
+    cell_number: List  # Список с номерами ячеек хранения для данного клиента.
     storage_time: str  # Время хранения.
     expiration_time: str  # Время истечения срока хранения.
+    is_processed: str  # Обработанный заказ True. Новый False
+
+
+# Таблица с короткими ссылками для отслеживания статистики
+class BitlyUrls(Table):
+    name: str  # Название ссылки
+    link: str  # Ссылка
 
 
 my_table = Users(db_path=load_config().db.database)
-
+links_table = BitlyUrls(db_path=load_config().db.database)
