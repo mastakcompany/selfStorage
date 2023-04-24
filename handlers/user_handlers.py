@@ -1,12 +1,22 @@
 from aiogram import Router
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 from aiogram3_calendar import DialogCalendar, dialog_cal_callback
 
 router = Router()
+
+
+class GetUserInfo(StatesGroup):
+    phone = State()
+    deliver = State()
+    address = State()
+    calendar = State()
+
 
 users_features = {}
 '''Переменная для хранения данных пользователя для последующей их записи в БД.
@@ -120,31 +130,43 @@ async def get_rental_period(callback: CallbackQuery):
 
 
 @router.callback_query(Text(endswith=['month']))
-async def get_phone_number(callback: CallbackQuery):
+async def get_phone_number(callback: CallbackQuery, state: FSMContext):
     users_features['storage_time'] = callback.data.split()[0]
-
+    await state.set_state(GetUserInfo.phone)
     await callback.message.edit_text(
         text='Введите ваш номер телефона для связи:'
     )
     await callback.answer()
 
 
-@router.message(Text)
-async def check_enter_message(message: Message):
-    user_id = message.from_user.id
-    if user_id in users_features:
-        if 'phone' in users_features[user_id]:
-            users_features[user_id]['address'] = message.text
-            await check_deliver_method(user_id, message)
-        else:
-            if users_features[user_id]['deliver']:
-                users_features[user_id]['phone'] = message.text
-                await message.answer(text='Введите адрес, откуда забрать вещи:')
-            else:
-                await message.answer(
-                    text='Адрес склада такой-то.\n\nУкажите день, когда приедете:',
-                    reply_markup=await DialogCalendar.start_calendar()
-                )
+@router.message(GetUserInfo.phone)
+async def process_phone(message: Message, state: FSMContext):
+    await state.update_data(phone=message.text)
+    users_features['phone'] = message.text
+    await message.answer(
+        text='Выберите метод доставки',
+        reply_markup=user_keyboards.send_to_storage_keyboard())
+
+
+# Функция выше выводит клавиатуру с методом доставки, но дело до этого обработчика не доходит
+@router.callback_query(Text(text=['yourself', 'courier']))
+async def check_deliver_method(callback: CallbackQuery, state: FSMContext):
+    if callback.message.text == 'yourself':
+        await callback.message.edit_text(
+            text='Адрес склада такой-то.\n\nУкажите день, когда приедете:',
+            reply_markup=await DialogCalendar.start_calendar()
+        )
+    elif callback.message.text == 'courier':
+        await state.set_state(GetUserInfo.address)
+        await callback.message.edit_text(
+            text='Введите адрес, откуда забрать вещи:'
+        )
+
+
+@router.message(GetUserInfo.address)
+async def process_address(message: Message, state: FSMContext):
+    await state.update_data(address=message.text)
+    await check_dimension(message.text)
 
 
 @router.callback_query(dialog_cal_callback.filter())
@@ -152,21 +174,12 @@ async def process_dialog_calendar(callback: CallbackQuery, callback_data: dict):
     selected, date = await DialogCalendar().process_selection(callback, callback_data)
     if selected:
         message = date.strftime("%d/%m/%Y")
-        user_id = callback.from_user.id
-        await check_deliver_method(user_id, message, callback)
+        await check_dimension(message)
 
 
-async def check_deliver_method(user_id, message, *args):
-    # ЗДЕСЬ ВЫЗВАТЬ ФУНКЦИЮ ДЛЯ ЗАПИСИ В БД
-    # ПОСЛЕ ЗАПИСИ ДАННЫХ УДАЛИТЬ user_id ИЗ users_features
-    if users_features[user_id]['deliver']:  # если вещи нужно забрать курьером
-        await message.answer(
-            text='Наш менеджер свяжется с вами в ближайшее время для уточнения деталей оплаты  и времени доставки.'
-        )
-    else:
-        await args[0].message.edit_text(
-            text=f'Место для ваших вещей забронировано на складе. Ждем вас {message}'
-        )
+async def check_dimension(message):
+    # Проверка, будет ли клиент сам мерять вещи
+    pass
 
 
 # Ветвь "Мои ячейки"
