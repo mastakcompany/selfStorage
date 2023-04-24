@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from environs import Env
 from sqlite3_api.Table import Table
-from sqlite3_api.field_types import List
+from pathlib import Path
 
 
 @dataclass
@@ -34,17 +34,20 @@ def load_config() -> Config:
     )
 
 
-# Заполнение таблицы полями. Поле id (создается автоматически, поэтому здесь не указано), является PRIMARY KEY
-# Будем считать, что это номер заказа
+# Заполнение таблицы полями. Поле id (создается автоматически, поэтому
+# здесь не указано), является PRIMARY KEY. Будем считать, что это номер заказа
 class Users(Table):
     user_id: int  # Телеграм id клиента.
     phone: str
-    address: str  # Адрес клиента. Если пустое, то клиент привезет свои вещи сам.
-    cell_size: str  # Значение габаритов ячейки. Если пустое, то клиент не хочет сам мерять.
+    address: str  # Адрес клиента. Если пустое, то клиент
+    # привезет свои вещи сам.
+    cell_size: str  # Значение габаритов ячейки. Если пустое,
+    # то клиент не хочет сам мерять.
     weight: str  # Масса вещей.
     cell_number: list  # Список с номерами ячеек хранения для данного клиента.
     storage_time: str  # Время хранения.
     expiration_time: str  # Время истечения срока хранения.
 
 
-my_table = Users(db_path=f'{load_config().db.database}')
+my_table = Users(db_path=Path(Path.cwd().parent, 'database',
+                              load_config().db.database))
