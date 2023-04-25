@@ -9,7 +9,7 @@ from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 from aiogram3_calendar import DialogCalendar, dialog_cal_callback
 
-from utils.utils import entry_to_database
+from utils.utils import entry_to_database, get_qrcode
 
 router = Router()
 
@@ -26,21 +26,18 @@ class GetUserInfo(StatesGroup):
     address = State()
 
 
-users_features = {}
-'''Переменная для хранения данных пользователя для последующей их записи в БД.
-После отправки данных в БД удалить все записи для текущего user_id.
-Словарь может иметь следующие значения:
-users_features = {
-        'user_id': 'telegram_id',
-        'weight': масса вещей,
-        'cell_size': значение габаритов ячейки, если клиент не хочет сам мерять то False,
-        'storage_time': срок аренды ячейки,
-        'phone': user_phone,
-        'yourself': Bool,
-        'address': user_address, если пустое, то клиент сам привезет свои вещи,
-        'is_processed': обработан ли заказ (True) или это новый (False),
-        'cell_number': номера ячеек хранения,
-}
+'''
+Что сохраняем в БД:
+
+'user_id': 'telegram_id',
+'weight': масса вещей,
+'cell_size': значение габаритов ячейки, если клиент не хочет сам мерять то False,
+'storage_time': срок аренды ячейки,
+'phone': user_phone,
+'yourself': Bool,
+'address': user_address, если пустое, то клиент сам привезет свои вещи,
+'is_processed': обработан ли заказ (True) или это новый (False),
+'cell_number': номера ячеек хранения,
 '''
 
 
@@ -97,22 +94,6 @@ async def get_item_weight(callback: CallbackQuery, state: FSMContext):
     await state.update_data(weight=callback.data)
     await state.set_state(GetUserInfo.weight)
     await callback.answer()
-
-
-# @router.callback_query(Text(text=['yourself', 'courier']))
-# async def get_item_weight(callback: CallbackQuery):
-#     user_id = callback.from_user.id
-#     if user_id in users_features:
-#         if callback.data == 'courier':
-#             users_features[user_id]['deliver'] = True
-#         else:
-#             users_features[user_id]['deliver'] = False
-#
-#     await callback.message.edit_text(
-#         text='Каков примерный вес ваших вещей?',
-#         reply_markup=user_keyboards.item_weight_keyboard()
-#     )
-#     await callback.answer()
 
 
 @router.callback_query(Text(startswith=['weight']), GetUserInfo.weight)
@@ -196,8 +177,10 @@ async def process_address(message: Message, state: FSMContext):
 
 
 @router.callback_query(dialog_cal_callback.filter())
-async def process_confirm(callback: CallbackQuery, callback_data: dict, state: FSMContext):
-    selected, date = await DialogCalendar().process_selection(callback, callback_data)
+async def process_confirm(callback: CallbackQuery, callback_data: dict,
+                          state: FSMContext):
+    selected, date = await DialogCalendar().process_selection(callback,
+                                                              callback_data)
     if selected:
         message = date.strftime("%d/%m/%Y")
         await callback.message.edit_text(
@@ -213,10 +196,8 @@ async def process_confirm(callback: CallbackQuery, callback_data: dict, state: F
 @router.message(Text(contains=['Мои ячейки']))
 async def output_my_cells_menu(message: Message):
     user_id = message.from_user.id
-    users_features[user_id] = {}
     cell_number = [101, 102]  # здесь будет результат запроса в БД со списком
     # ячеек для данного пользователя
-    users_features[user_id]['cell_number'] = cell_number
     await message.answer(
         text=f'{cell_number}',
         reply_markup=user_keyboards.output_my_cells_keyboard()
@@ -226,7 +207,6 @@ async def output_my_cells_menu(message: Message):
 @router.callback_query(Text(text=['extend_storage']))
 async def get_cell_number(callback: CallbackQuery):
     user_id = callback.from_user.id
-    user_cells = users_features[user_id]['cell_number']
     await callback.message.edit_text(
         text='Выберите ячейку, для которой хотите продлить срок хранения:',
         reply_markup=user_keyboards.generate_my_cells_keyboard(user_cells)
@@ -244,12 +224,14 @@ async def extend_rental_period_cmd(callback: CallbackQuery):
 @router.callback_query(Text(startswith=['extend_']))
 async def send_success_extend_message(callback: CallbackQuery):
     await callback.message.edit_text(
-        text='''Ваш запрос на продление срока аренды принят.
-    Менеджер свяжется с вами в ближайшее время для уточнения деталей.'''
+        text='Ваш запрос на продление срока аренды принят. \n'
+             'Менеджер свяжется с вами в ближайшее время для '
+             'уточнения деталей.'
     )
 
 
-@router.callback_query(Text(text=['pick_up_some_things', 'pick_up_all_things']))
+@router.callback_query(
+    Text(text=['pick_up_some_things', 'pick_up_all_things']))
 async def output_pick_up_things_buttons(callback: CallbackQuery):
     user_id = callback.from_user.id
     if user_id in users_features:
@@ -258,9 +240,11 @@ async def output_pick_up_things_buttons(callback: CallbackQuery):
             reply_markup=user_keyboards.generate_pick_up_things_keyboard()
         )
         if callback.data == 'pick_up_some_things':
-            users_features[user_id]['all_things'] = False  # клиент заберет часть вещей
+            users_features[user_id][
+                'all_things'] = False  # клиент заберет часть вещей
         else:
-            users_features[user_id]['all_things'] = True  # клиент заберет все вещи
+            users_features[user_id][
+                'all_things'] = True  # клиент заберет все вещи
 
 
 @router.callback_query(Text(text=['pick_up_myself', 'deliver_home']))
@@ -270,12 +254,15 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
         user_cells = users_features[user_id]['cell_number']
         await callback.message.edit_text(
             text='Выберите ячейку, из которой хотите забрать вещи:',
-            reply_markup=user_keyboards.generate_pick_up_cells_keyboard(user_cells)
+            reply_markup=user_keyboards.generate_pick_up_cells_keyboard(
+                user_cells)
         )
         if callback.data == 'deliver_home':
-            users_features[user_id]['deliver'] = True  # доставить вещи клиенту на дом
+            users_features[user_id][
+                'deliver'] = True  # доставить вещи клиенту на дом
         else:
-            users_features[user_id]['deliver'] = False  # клиент заберет вещи сам
+            users_features[user_id][
+                'deliver'] = False  # клиент заберет вещи сам
 
 
 @router.callback_query(Text(startswith=['pick_up_cell_']))
@@ -290,15 +277,14 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
         else:
             if users_features[user_id]['all_things']:
                 await callback.message.edit_text(
-                    text='''Прислать клиенту QR-код с номером (номерами) 
-                    ячейки и адресом склада.
-            QR-код можно генерировать с помощью API bitly'''
+                    text='Прислать клиенту QR-код с номером (номерами) '
+                         'ячейки и адресом склада. QR-код можно генерировать '
+                         'с помощью API bitly'
                 )
             else:
                 await callback.message.edit_text(
-                    text='''Прислать клиенту QR-код с номером (номерами) 
-                    ячейки и адресом склада.
-            QR-код можно генерировать с помощью API bitly + оповещение, 
-            что вещи можно будет вернуть'''
+                    text='Прислать клиенту QR-код с номером (номерами) '
+                         'ячейки и адресом склада. QR-код можно генерировать '
+                         'с помощью API bitly'
                 )
     del users_features[user_id]

@@ -1,4 +1,7 @@
+from aiogram.types import FSInputFile
+
 from config_data.config import load_config
+import qrcode
 
 import requests
 from urllib.parse import urlparse
@@ -39,3 +42,9 @@ async def entry_to_database(table, data):
     print('Данные записаны успешно в БД!')
     return
 
+
+def get_qrcode(url):
+    img = qrcode.make(url)
+    name_photo = 'some_file.png'
+    img.save(name_photo)
+    return FSInputFile(name_photo)
