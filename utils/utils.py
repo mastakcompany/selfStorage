@@ -43,8 +43,8 @@ async def entry_to_database(table, data):
     return
 
 
-def get_qrcode(url):
-    img = qrcode.make(url)
+def get_qrcode(data):
+    img = qrcode.make(data)
     name_photo = 'some_file.png'
     img.save(name_photo)
     return FSInputFile(name_photo)

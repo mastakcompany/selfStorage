@@ -146,12 +146,15 @@ def generate_pick_up_things_keyboard():
 
 
 def generate_pick_up_cells_keyboard(user_cells):
-    inline_keyboard = [
-        [InlineKeyboardButton(text=f'{cell}', callback_data=f'pick_up_cell_{cell}')]
-        for cell in user_cells
-    ]
+    buttons = []
+    for cell in user_cells:
+        buttons.append((f'{cell}', f'pick_up_cell_{cell}'))
 
-    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=text, callback_data=data)] for text, data in buttons
+        ]
+    )
 
 
 def agree_keyboard():

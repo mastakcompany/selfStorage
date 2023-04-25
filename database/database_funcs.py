@@ -84,6 +84,15 @@ def get_overdue_order_details(order_id):
     return obj.phone
 
 
+def get_user_cells(user_id):
+    obj = my_table.filter(user_id=user_id)
+    return obj.cell_number
+
+
+def check_user(user_id):
+    return my_table.filter(user_id=user_id, return_list=True)
+
+
 def print_table():
     for obj in links_table.filter():
         print(obj, '\n')
