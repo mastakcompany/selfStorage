@@ -19,6 +19,8 @@ router = Router()
 class GetCellNumber(StatesGroup):
     cell_number = State()
     order_id = State()
+    link = State()
+    link_name = State()
 
 
 @router.message(Command(commands=['admin']))
@@ -87,7 +89,10 @@ async def show_links(message: Message):
             reply_markup=admin_keyboards.show_current_links(current_links)
         )
     else:
-        await message.answer(text='Нет ссылок для сбора статистики.')
+        await message.answer(
+            text='Нет ссылок для сбора статистики.',
+            reply_markup=admin_keyboards.add_link_keyboard()
+        )
 
 
 @router.callback_query(Text(startswith=['current_link_']))
@@ -95,13 +100,53 @@ async def show_link_details(callback: CallbackQuery):
     link_name = callback.data.split(sep="_")[2]
     link = database_funcs.get_link(link_name)
     count_clicks = utils.get_link_clicks(link)
-    await callback.message.edit_text(
-        text=f'Количество кликов по ссылке {count_clicks} раз.'
-    )
+    await callback.message.edit_text(text=f'Количество кликов по ссылке {count_clicks} раз.')
+
+
+@router.callback_query(Text(text=['add_link']))
+async def add_link(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(GetCellNumber.link)
+    await callback.message.edit_text(text='Вставьте bitly ссылку:')
+
+
+@router.message(GetCellNumber.link)
+async def add_link_name(message: Message, state: FSMContext):
+    await state.update_data(link=message.text)
+    await state.set_state(GetCellNumber.link_name)
+    await message.answer(text='Введите название для ссылки:')
+
+
+@router.message(GetCellNumber.link_name)
+async def write_link_details(message: Message, state: FSMContext):
+    await state.update_data(link_name=message.text)
+    data = await state.get_data()
+    link = data.get('link')
+    name = data.get('link_name')
+    print(link, name)
+    database_funcs.add_new_link(link, name)
+    database_funcs.print_table()
+    await message.answer(text='Ссылка добавлена')
+    await state.clear()
 
 
 @router.message(Text(contains=['Просроченные заказы']))
-async def show_new_orders(message: Message):
-    await message.answer(
-        text='Overdue orders'
+async def show_overdue_orders(message: Message):
+    overdue_orders = database_funcs.get_overdue_orders()
+    if len(overdue_orders):
+        await message.answer(
+            text=f'Сегодня {len(overdue_orders)} просроченных заказов.\nНажмите на заказ, чтобы посмотреть детали',
+            reply_markup=admin_keyboards.show_overdue_keyboard(overdue_orders)
+        )
+    else:
+        await message.answer(
+            text=f'Сегодня нет просроченных заказов.'
+        )
+
+
+@router.callback_query(Text(startswith=['overdue_order_']))
+async def show_overdue_order_details(callback: CallbackQuery):
+    order_id = int(callback.data.split(sep="_")[-1])
+    order_phone = database_funcs.get_overdue_order_details(order_id)
+    await callback.message.edit_text(
+        text=f'Заказ №{order_id}\nТелефон: {order_phone}'
     )
