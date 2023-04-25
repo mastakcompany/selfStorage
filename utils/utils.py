@@ -20,3 +20,18 @@ def get_link_clicks(link):
     response.raise_for_status()
     counts = response.json()
     return counts['total_clicks']
+
+
+async def entry_to_database(table, data):
+    table.insert(
+        user_id=data.get('user_id'),
+        weight=data.get('weight'),
+        storage_time=data.get('storage_time'),
+        phone=data.get('phone'),
+        deliver=data.get('deliver'),
+        address=data.get('address'),
+        dimension=data.get('dimension')
+    )
+    print('Данные записаны успешно в БД!')
+    return
+

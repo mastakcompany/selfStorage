@@ -1,21 +1,31 @@
 from aiogram import Router
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 
+from config_data.config import my_table
 from keyboards import user_keyboards
 from lexicon.lexicon_ru import LEXICON_RU
 from aiogram3_calendar import DialogCalendar, dialog_cal_callback
+
+from utils.utils import entry_to_database
 
 router = Router()
 
 
 class GetUserInfo(StatesGroup):
+    new_user = State()
+    weight = State()
+    dimension = State()
+    rental_period = State()
     phone = State()
     deliver = State()
+    yourself_delivery = State()
+    courier_delivery = State()
     address = State()
     calendar = State()
+    new_entry = State()
 
 
 users_features = {}
@@ -70,22 +80,24 @@ async def process_what_can_be_stored(message: Message):
 
 
 @router.message(Text(contains=['Отправить на хранение']))
-async def process_send_to_storage(message: Message):
+async def process_send_to_storage(message: Message, state: FSMContext):
     await message.answer(
         text=LEXICON_RU['rules'],
         reply_markup=user_keyboards.agree_keyboard()
     )
     user_id = int(message.from_user.id)
-    users_features[user_id] = user_id
+    await state.update_data(user_id=user_id)
+    await state.set_state(GetUserInfo.new_user)
 
 
-@router.callback_query(Text(text=['agree']))
-async def get_item_weight(callback: CallbackQuery):
+@router.callback_query(Text(text=['agree']), GetUserInfo.new_user)
+async def get_item_weight(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         text='Каков примерный вес ваших вещей?',
         reply_markup=user_keyboards.item_weight_keyboard()
     )
-    users_features['weight'] = callback.data
+    await state.update_data(weight=callback.data)
+    await state.set_state(GetUserInfo.weight)
     await callback.answer()
 
 
@@ -105,68 +117,89 @@ async def get_item_weight(callback: CallbackQuery):
 #     await callback.answer()
 
 
-@router.callback_query(Text(startswith=['weight']))
-async def get_item_dimensions(callback: CallbackQuery):
+@router.callback_query(Text(startswith=['weight']), GetUserInfo.weight)
+async def get_item_dimensions(callback: CallbackQuery, state: FSMContext):
     weight = callback.data.split()[1]
-    users_features['weight'] = weight
+    await state.update_data(weight=weight)
 
     await callback.message.edit_text(
         text=LEXICON_RU['dimension'],
         reply_markup=user_keyboards.item_dimensions_keyboard()
     )
+    await state.set_state(GetUserInfo.dimension)
     await callback.answer()
 
 
-@router.callback_query(Text(startswith=['dimension']))
-async def get_rental_period(callback: CallbackQuery):
+@router.callback_query(Text(startswith=['dimension']), GetUserInfo.dimension)
+async def get_rental_period(callback: CallbackQuery, state: FSMContext):
     dimension = callback.data.split()[1]
-    users_features['dimension'] = dimension
+    await state.update_data(dimension=dimension)
 
     await callback.message.edit_text(
         text='Выберите срок аренды:',
         reply_markup=user_keyboards.rental_period_keyboard()
     )
+    await state.set_state(GetUserInfo.rental_period)
     await callback.answer()
 
 
-@router.callback_query(Text(endswith=['month']))
+@router.callback_query(Text(endswith=['month']), GetUserInfo.rental_period)
 async def get_phone_number(callback: CallbackQuery, state: FSMContext):
-    users_features['storage_time'] = callback.data.split()[0]
-    await state.set_state(GetUserInfo.phone)
+    storage_time = callback.data.split()[0]
+    await state.update_data(storage_time=storage_time)
+
     await callback.message.edit_text(
         text='Введите ваш номер телефона для связи:'
     )
+    await state.set_state(GetUserInfo.phone)
     await callback.answer()
 
 
 @router.message(GetUserInfo.phone)
 async def process_phone(message: Message, state: FSMContext):
-    await state.update_data(phone=message.text)
-    users_features['phone'] = message.text
+    phone = message.text
+    await state.update_data(phone=phone)
+
     await message.answer(
         text='Выберите метод доставки',
         reply_markup=user_keyboards.send_to_storage_keyboard())
 
+    await state.set_state(GetUserInfo.deliver)
 
-# Функция выше выводит клавиатуру с методом доставки, но дело до этого обработчика не доходит
-@router.callback_query(Text(text=['yourself', 'courier']))
+
+@router.callback_query(Text(text=['yourself', 'courier']), GetUserInfo.deliver)
 async def check_deliver_method(callback: CallbackQuery, state: FSMContext):
-    if callback.message.text == 'yourself':
+    if callback.data == 'yourself':
+        await state.update_data(deliver='yourself')
         await callback.message.edit_text(
-            text='Адрес склада такой-то.\n\nУкажите день, когда приедете:',
+            text='Адрес склада: Улица Пыльная, дом Не видно.\n'
+                 'Укажите дату, когда приедете:',
             reply_markup=await DialogCalendar.start_calendar()
         )
-    elif callback.message.text == 'courier':
-        await state.set_state(GetUserInfo.address)
+        await state.set_state(GetUserInfo.yourself_delivery)
+    elif callback.data == 'courier':
+        await state.update_data(deliver='courier')
         await callback.message.edit_text(
             text='Введите адрес, откуда забрать вещи:'
         )
+        await state.set_state(GetUserInfo.courier_delivery)
+    await callback.answer()
 
 
-@router.message(GetUserInfo.address)
+@router.message(GetUserInfo.courier_delivery)
 async def process_address(message: Message, state: FSMContext):
     await state.update_data(address=message.text)
-    await check_dimension(message.text)
+    await message.answer(
+        text='Наш менеджер свяжется с вами в ближайшее время для уточнения '
+             'деталей оплаты  и времени доставки '
+    )
+    user_data = await state.get_data()
+    await entry_to_database(my_table, user_data)
+
+
+@router.message(GetUserInfo.new_entry)
+async def process_new_entry_courier(message: Message, state: FSMContext):
+    pass
 
 
 @router.callback_query(dialog_cal_callback.filter())
@@ -187,7 +220,8 @@ async def check_dimension(message):
 async def output_my_cells_menu(message: Message):
     user_id = message.from_user.id
     users_features[user_id] = {}
-    cell_number = [101, 102]  # здесь будет результат запроса в БД со списком ячеек для данного пользователя
+    cell_number = [101, 102]  # здесь будет результат запроса в БД со списком
+    # ячеек для данного пользователя
     users_features[user_id]['cell_number'] = cell_number
     await message.answer(
         text=f'{cell_number}',
@@ -256,17 +290,21 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery):
     if user_id in users_features:
         if users_features[user_id]['deliver']:
             await callback.message.edit_text(
-                text='Менеджер свяжется с вами в ближайшее время для уточнения деталей доставки ваших вещей.'
+                text='Менеджер свяжется с вами в ближайшее время для '
+                     'уточнения деталей доставки ваших вещей.'
             )
         else:
             if users_features[user_id]['all_things']:
                 await callback.message.edit_text(
-                    text='''Прислать клиенту QR-код с номером (номерами) ячейки и адресом склада.
+                    text='''Прислать клиенту QR-код с номером (номерами) 
+                    ячейки и адресом склада.
             QR-код можно генерировать с помощью API bitly'''
                 )
             else:
                 await callback.message.edit_text(
-                    text='''Прислать клиенту QR-код с номером (номерами) ячейки и адресом склада.
-            QR-код можно генерировать с помощью API bitly + оповещение, что вещи можно будет вернуть'''
+                    text='''Прислать клиенту QR-код с номером (номерами) 
+                    ячейки и адресом склада.
+            QR-код можно генерировать с помощью API bitly + оповещение, 
+            что вещи можно будет вернуть'''
                 )
     del users_features[user_id]

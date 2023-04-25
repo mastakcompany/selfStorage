@@ -1,21 +1,21 @@
-from bot import my_table, links_table
+# from bot import my_table, links_table
 
 from sqlite3_api.Table import Table
 from sqlite3_api.field_types import List
 
 
-def filling_users_table_test_data():
-    my_table.insert(
-        user_id=100,
-        phone='4455',
-        address='nowhere',
-        dimension='3-7',
-        weight='40-70',
-        cell_number='12,13',
-        storage_time='6',
-        expiration_time='10.10.2020',
-        is_processed='True'
-    )
+# def filling_users_table_test_data():
+#     my_table.insert(
+#         user_id=100,
+#         phone='4455',
+#         address='nowhere',
+#         dimension='3-7',
+#         weight='40-70',
+#         cell_number='12,13',
+#         storage_time='6',
+#         expiration_time='10.10.2020',
+#         is_processed='True'
+#     )
 
 
 def filling_links_table_test_data():
