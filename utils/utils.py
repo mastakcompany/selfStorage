@@ -30,7 +30,11 @@ async def entry_to_database(table, data):
         phone=data.get('phone'),
         deliver=data.get('deliver'),
         address=data.get('address'),
-        dimension=data.get('dimension')
+        dimension=data.get('dimension'),
+        cell_number=False,
+        expiration_time=False,
+        is_processed=False,
+        date=data.get('date')
     )
     print('Данные записаны успешно в БД!')
     return
