@@ -180,6 +180,7 @@ async def process_address(message: Message, state: FSMContext):
     )
     user_data = await state.get_data()
     await entry_to_database(my_table, user_data)
+    await state.clear()
 
 
 @router.callback_query(dialog_cal_callback.filter())
@@ -196,6 +197,7 @@ async def process_confirm(callback: CallbackQuery, callback_data: dict,
         await state.update_data(date=message)
         user_data = await state.get_data()
         await entry_to_database(my_table, user_data)
+        await state.clear()
 
 
 # Ветвь "Мои ячейки"
@@ -204,11 +206,16 @@ async def output_my_cells_menu(message: Message):
     user_id = message.from_user.id
     is_user = database_funcs.check_user(user_id)
     if is_user:
-        cell_number = database_funcs.get_user_cells(user_id)
-        await message.answer(
-            text=f'{cell_number}',
-            reply_markup=user_keyboards.output_my_cells_keyboard()
-        )
+        if not database_funcs.get_user_cells(user_id):
+            await message.answer(
+                text=f'Ваш заказ в обработке.'
+            )
+        else:
+            cell_number = database_funcs.get_user_cells(user_id)
+            await message.answer(
+                text=f'{cell_number}',
+                reply_markup=user_keyboards.output_my_cells_keyboard()
+            )
     else:
         await message.answer(
             text=f'У вас нет вещей на хранении.'
@@ -279,7 +286,6 @@ async def output_pick_up_cells_buttons(callback: CallbackQuery, state: FSMContex
     all_things = data.get('all_things')
     cell_number = data.get('cell_number')
     if deliver:
-        await callback.message.answer()
         await callback.message.edit_text(
             text='Менеджер свяжется с вами в ближайшее время для '
             'уточнения деталей доставки ваших вещей.'

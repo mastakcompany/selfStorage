@@ -97,7 +97,7 @@ async def show_links(message: Message):
 
 @router.callback_query(Text(startswith=['current_link_']))
 async def show_link_details(callback: CallbackQuery):
-    link_name = callback.data.split(sep="_")[2]
+    link_name = callback.data.split(sep="_")[-1]
     link = database_funcs.get_link(link_name)
     count_clicks = utils.get_link_clicks(link)
     await callback.message.edit_text(text=f'Количество кликов по ссылке {count_clicks} раз.')
@@ -122,7 +122,6 @@ async def write_link_details(message: Message, state: FSMContext):
     data = await state.get_data()
     link = data.get('link')
     name = data.get('link_name')
-    print(link, name)
     database_funcs.add_new_link(link, name)
     database_funcs.print_table()
     await message.answer(text='Ссылка добавлена')
